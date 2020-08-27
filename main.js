@@ -43,7 +43,7 @@ client.on("message", (message) => {
 		}
 		return message.channel.send(reply);
 	}
-	if (!cooldowns.has(command.name)) {
+	if (!cooldowns.has(command.name) && !command.noCooldown) {
 		cooldowns.set(command.name, new Discord.Collection());
 	}
 	const now = Date.now();

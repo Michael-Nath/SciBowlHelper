@@ -53,7 +53,8 @@ const textbooks = {
 
 module.exports = {
 	name: "books",
-	description: "list textbooks",
+	usage: "<subject>",
+	description: `\`books\` command lists books used in the club. To get all books, it's \`!books all\`. To get subject books it's \`!books <subject>\`, where subject is one of the following: **bio**, **chem**, **earthspace**, **physics**, **math**`,
 	args: true,
 	execute(message, args) {
 		if (args[0] === "all") {
@@ -71,11 +72,17 @@ module.exports = {
 
 		try {
 			const subject = args[0];
-			return message.channel.send(textbooks.subject);
+			const books = textbooks[subject];
+			if (!books) {
+				return message.channel.send(
+					`Please make sure that you type in a subject in the way that's described in \`!info books\``
+				);
+			}
+			message.channel.send(books);
 		} catch (error) {
 			console.log(error);
 			message.channel.send(
-				`Please make sure that you type in a subject in the way that's described in \`!info books\``
+				"An error has occured while executing this command. Please contact **Michael Nath**"
 			);
 		}
 	},
