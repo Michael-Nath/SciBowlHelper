@@ -52,7 +52,7 @@ client.on("message", (message) => {
 
 	if (timestamps.has(message.author.id)) {
 		const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
-		if (now < expirtationTime) {
+		if (now < expirationTime) {
 			const timeLeft = (expirationTime - now) / 1000;
 			return message.reply(
 				`please wait ${timeLeft.toFixed(
@@ -62,15 +62,14 @@ client.on("message", (message) => {
 		}
 	}
 	timestamps.set(message.author.id, now);
-	setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
+	// setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
 
 	try {
-		command.get(command).execute(message, args);
+		setTimeout(() => command.execute(message, args), 2000);
 	} catch (error) {
 		console.error(error);
 		message.reply("Sorry. It appears an error has occured.");
 	}
-	// other commands...
 });
 
 client.login(token);
