@@ -14,7 +14,7 @@ const getMethods = (obj) => {
 };
 module.exports = {
 	name: "timer",
-	noCooldown: true,
+	cooldown: 0.1,
 	description:
 		"makes bot act as a timer, allowing you to start and stop a timer session.",
 	execute(message, args) {
@@ -26,9 +26,9 @@ module.exports = {
 			if (timer.get("start")) {
 				const now = Date.now();
 				const elapsed = (now - timer.get("start")) / 1000;
-				message.channel.send(`Time elapsed: ${elapsed}`);
-				console.log(getMethods(timer));
 				timer.delete("start");
+				return message.channel.send(`Time elapsed: ${elapsed}`);
+				// console.log(getMethods(timer));
 			} else {
 				return message.channel.send(
 					"You can't stop a timer session that hasn't been started, silly!"

@@ -43,7 +43,7 @@ client.on("message", (message) => {
 		}
 		return message.channel.send(reply);
 	}
-	if (!cooldowns.has(command.name) && !command.noCooldown) {
+	if (!cooldowns.has(command.name)) {
 		cooldowns.set(command.name, new Discord.Collection());
 	}
 	const now = Date.now();
@@ -65,7 +65,7 @@ client.on("message", (message) => {
 	// setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
 
 	try {
-		setTimeout(() => command.execute(message, args), 2000);
+		setTimeout(() => command.execute(message, args), 1);
 	} catch (error) {
 		console.error(error);
 		message.reply("Sorry. It appears an error has occured.");

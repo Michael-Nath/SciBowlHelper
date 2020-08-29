@@ -1,3 +1,4 @@
+const Discord = require("discord.js");
 const biologyBooks = [
 	"Campbell's Biology 11th Edition",
 	"Molecular Biology of the Cell by Bruce Alberts",
@@ -12,7 +13,7 @@ const biologyBooks = [
 
 const chemistryBooks = [
 	"Chemistry by Zumdahl",
-	"Atkins' Physical Chemistry",
+	"Physical Chemistry by Atkins",
 	"Organic Chemistry by David Klein",
 	"Organic Chemistry by Jonathan Clayden",
 ];
@@ -51,6 +52,13 @@ const textbooks = {
 	math: mathBooks,
 };
 
+const embedBooks = new Discord.MessageEmbed();
+// setting title of message
+embedBooks.setTitle("Science Bowl Books");
+// setting name of message
+embedBooks.setAuthor("From Science Bowl Repository");
+// giving description of message
+embedBooks.setDescription("Here are the available books as per your request!");
 module.exports = {
 	name: "books",
 	usage: "<subject>",
@@ -58,27 +66,59 @@ module.exports = {
 	args: true,
 	execute(message, args) {
 		if (args[0] === "all") {
+			if (embedBooks.fields.length != 0) {
+				embedBooks.spliceFields(0, 5);
+			}
 			message.channel.send(
 				"I've sent you a DM with all the books that you've requested for"
 			);
-			return message.author.send(
-				biologyBooks +
-					chemistryBooks +
-					earthAndSpaceBooks +
-					physicsBooks +
-					mathBooks
+			embedBooks.addFields(
+				{
+					name: "Biology",
+					value: biologyBooks.map((val, key) => `*${val}*`).join("\n"),
+				},
+				{
+					name: "Chemistry",
+					value: chemistryBooks.map((val, key) => `*${val}*`).join("\n"),
+				},
+				{
+					name: "Earth and Space",
+					value: earthAndSpaceBooks.map((val, key) => `*${val}*`).join("\n"),
+				},
+				{
+					name: "Physics",
+					value: physicsBooks.map((val, key) => `*${val}*`).join("\n"),
+				},
+				{
+					name: "Mathematics",
+					value: mathBooks.map((val, key) => `*${val}*`).join("\n"),
+				}
 			);
+
+			return message.author.send(embedBooks);
 		}
 
 		try {
 			const subject = args[0];
 			const books = textbooks[subject];
+			const translations = {
+				bio: "Biology",
+				chem: "Chemistry",
+				physics: "Physics",
+				earthspace: "Earth and Space",
+				math: "Mathematics",
+			};
 			if (!books) {
 				return message.channel.send(
 					`Please make sure that you type in a subject in the way that's described in \`!info books\``
 				);
 			}
-			message.channel.send(books);
+			embedBooks.addField(
+				translations[subject],
+				books.map((val, key) => `*${val}*`).join("\n")
+			);
+			message.channel.send(embedBooks);
+			embedBooks.spliceFields(0, 1);
 		} catch (error) {
 			console.log(error);
 			message.channel.send(
