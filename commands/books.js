@@ -59,6 +59,10 @@ embedBooks.setTitle("Science Bowl Books");
 embedBooks.setAuthor("From Science Bowl Repository");
 // giving description of message
 embedBooks.setDescription("Here are the available books as per your request!");
+
+// setting timestamp of tthe message
+embedBooks.setTimestamp();
+
 module.exports = {
 	name: "books",
 	usage: "<subject>",
