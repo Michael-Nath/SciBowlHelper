@@ -3,11 +3,15 @@ const Game = new Discord.Collection();
 var Toss = false;
 var Bonus = false;
 var Interrupt = false;
+var buffer = 0;
 var currentlyBuzzing = false;
 var currentBuzzingTeam = "";
-let clientTimeout;
+var interruptingTeam = "";
+let tossUpTimeout;
+let bonusTimeout;
 var currentGreenGain = 0;
 var currentRedGain = 0;
+var wrongs = [];
 
 const start = (message, args) => {
 	if (Game.get("r") != undefined || Game.get("g") != undefined) {
@@ -26,8 +30,16 @@ const stop = (message, args) => {
 	}
 	const greenScore = Game.get("g");
 	const redScore = Game.get("r");
+
 	Game.delete("g");
 	Game.delete("r");
+	Toss = false;
+	Bonus = false;
+	Interrupt = false;
+	currentlyBuzzing = false;
+	currentBuzzingTeam = "";
+	currentGreenGain = 0;
+	currentRedGain = 0;
 	return message.channel.send(
 		`Game has stopped.\n GREEN: ${greenScore} RED: ${redScore}`
 	);
@@ -38,6 +50,7 @@ const roundEnd = (message, args) => {
 		if (Interrupt) {
 			if (currentBuzzingTeam === "green") currentRedGain += 4;
 			else if (currentBuzzingTeam === "red") currentGreenGain += 4;
+			Interrupt = false;
 		}
 		Game.set("g", Game.get("g") + currentGreenGain);
 		Game.set("r", Game.get("r") + currentRedGain);
@@ -46,12 +59,13 @@ const roundEnd = (message, args) => {
 		Toss = false;
 		Bonus = false;
 		currentlyBuzzing = false;
+		currentBuzzingTeam = "";
 		message.client.clearTimeout();
 		currentGreenGain = 0;
 		currentRedGain = 0;
 
 		return message.channel.send(
-			`Points have been successfuly awarded!\nGREEN: ${greenScore} RED: ${redScore}`
+			`Mini rounded has ended!\nGREEN: ${greenScore} RED: ${redScore}`
 		);
 	} catch (error) {
 		console.log(error);
@@ -69,30 +83,40 @@ const tossUp = (message, args) => {
 	message.channel.send("Toss Up has Started.");
 	Toss = true;
 	currentBuzzingTeam = "";
-	clientTimeout = message.client.setTimeout(() => {
+	tossUpTimeout = message.client.setTimeout(() => {
 		Toss = false;
 		message.channel.send("Toss Up Over!");
-	}, 5000);
+		buffer = 0;
+	}, 5000 + 1000 * buffer);
 };
 
 const buzz = (message, args) => {
 	const currentUserDisplayName = message.member.displayName
 		.split(" ")[0]
 		.toLowerCase();
-	if (Bonus) return;
-	if (currentlyBuzzing || currentUserDisplayName === currentBuzzingTeam) {
+	if (Bonus) {
+		return;
+	}
+	console.log(currentlyBuzzing);
+	console.log(currentBuzzingTeam);
+	if (
+		currentlyBuzzing ||
+		currentUserDisplayName === currentBuzzingTeam ||
+		currentUserDisplayName === interruptingTeam
+	) {
 		return;
 	} else {
 		currentBuzzingTeam = message.member.displayName.split(" ")[0].toLowerCase();
 		currentlyBuzzing = true;
 		console.log(`Current team that's buzzing is ${currentBuzzingTeam}`);
 	}
-	message.client.clearTimeout(clientTimeout);
+	message.client.clearTimeout(tossUpTimeout);
 	if (!Toss) {
 		if (Bonus) {
 			return message.reply("You may not buzz during a bonus round!");
 		}
 		Interrupt = true;
+		interruptingTeam = currentBuzzingTeam;
 		currentlyBuzzing = true;
 		return message.reply(
 			"You have buzzed before the toss up question could end. State your answer."
@@ -101,9 +125,11 @@ const buzz = (message, args) => {
 	return message.reply("State your answer.");
 };
 
-const right = (message, args) => {
-	if (Toss) {
+const right = (message, args, buffer) => {
+	if (Toss || Interrupt) {
+		message.client.clearTimeout(tossUpTimeout);
 		Toss = false;
+		Interrupt = false;
 		if (currentBuzzingTeam === "green") {
 			currentGreenGain += 4;
 		} else if (currentBuzzingTeam === "red") {
@@ -115,6 +141,7 @@ const right = (message, args) => {
 		}
 		return message.channel.send("Moving onto bonus round!");
 	} else if (Bonus) {
+		message.client.clearTimeout(bonusTimeout);
 		Bonus = false;
 		if (currentBuzzingTeam === "green") {
 			currentGreenGain += 10;
@@ -125,22 +152,45 @@ const right = (message, args) => {
 				"Oops there appears to be an error. Contact **Michael Nath**"
 			);
 		}
+		return roundEnd(message, args);
 	}
 };
 
 const wrong = (message, args) => {
-	if (Toss) {
-		const opposingTeam = currentBuzzingTeam === "green" ? "red" : "green";
-		currentBuzzingTeam = opposingTeam;
+	if (Interrupt) {
 		currentlyBuzzing = false;
-		clientTimeout = message.client.setTimeout(() => {
-			Toss = false;
-			message.channel.send("Toss Up Over!");
-		}, 5000);
-		return message.channel.send(`${opposingTeam} team may now buzz.`);
-	} else if (Bonus || Interrupt) {
-		return roundEnd(message, end);
+		if (currentBuzzingTeam === "green") {
+			currentRedGain += 4;
+		} else if (currentBuzzingTeam === "red") {
+			currentGreenGain += 4;
+		}
+		return message.channel.send("Wrong! Toss up will be repeated.");
 	}
+	if (Toss) {
+		message.client.clearTimeout(tossUpTimeout);
+		if (!wrongs.includes(currentBuzzingTeam)) {
+			wrongs.push(currentBuzzingTeam);
+		}
+		currentlyBuzzing = false;
+		buffer = 0.2;
+		if (wrongs.length == 2) {
+			wrongs = [];
+			return roundEnd(message, args);
+		}
+		return message.channel.send(`${opposingTeam} team may now buzz.`);
+	} else if (Bonus) {
+		message.client.clearTimeout(bonusTimeout);
+		return roundEnd(message, args);
+	}
+};
+
+const bonus = (message, args) => {
+	Bonus = true;
+	message.channel.send("Bonus round has just begun.");
+	bonusTimeout = setTimeout(() => {
+		message.channel.send("Bonus round is over!");
+		return roundEnd(message, args);
+	}, 20000);
 };
 module.exports = {
 	name: "score",
@@ -165,6 +215,8 @@ module.exports = {
 				return right(message, args);
 			case "wrong":
 				return wrong(message, args);
+			case "bo":
+				return bonus(message, args);
 		}
 	},
 };
