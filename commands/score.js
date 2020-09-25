@@ -12,7 +12,22 @@ let bonusTimeout;
 var currentGreenGain = 0;
 var currentRedGain = 0;
 var wrongs = [];
+function addZero(x, n) {
+	while (x.toString().length < n) {
+		x = "0" + x;
+	}
+	return x;
+}
 
+function myFunction() {
+	var d = new Date();
+
+	var h = addZero(d.getHours(), 2);
+	var m = addZero(d.getMinutes(), 2);
+	var s = addZero(d.getSeconds(), 2);
+	var ms = addZero(d.getMilliseconds(), 3);
+	return h + ":" + m + ":" + s + ":" + ms;
+}
 const start = (message, args) => {
 	if (Game.get("r") != undefined || Game.get("g") != undefined) {
 		return message.channel.send(
@@ -91,6 +106,7 @@ const tossUp = (message, args) => {
 };
 
 const buzz = (message, args) => {
+	message.reply(myFunction())
 	const currentUserDisplayName = message.member.displayName
 		.split(" ")[0]
 		.toLowerCase();
@@ -108,7 +124,7 @@ const buzz = (message, args) => {
 	} else {
 		currentBuzzingTeam = message.member.displayName.split(" ")[0].toLowerCase();
 		currentlyBuzzing = true;
-		console.log(`Current team that's buzzing is ${currentBuzzingTeam}`);
+		console.log(`Current team that's buzzing is`);
 	}
 	message.client.clearTimeout(tossUpTimeout);
 	if (!Toss) {
@@ -119,10 +135,10 @@ const buzz = (message, args) => {
 		interruptingTeam = currentBuzzingTeam;
 		currentlyBuzzing = true;
 		return message.reply(
-			"You have buzzed before the toss up question could end. State your answer."
+			`You have buzzed before the toss up question could end. State your answer.`
 		);
 	}
-	return message.reply("State your answer.");
+	return message.reply(`State your answer.`);
 };
 
 const right = (message, args, buffer) => {
@@ -177,6 +193,7 @@ const wrong = (message, args) => {
 			wrongs = [];
 			return roundEnd(message, args);
 		}
+		const opposingTeam = currentBuzzingTeam === "green" ? "red" : "green";
 		return message.channel.send(`${opposingTeam} team may now buzz.`);
 	} else if (Bonus) {
 		message.client.clearTimeout(bonusTimeout);
