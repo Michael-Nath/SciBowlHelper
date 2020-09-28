@@ -1,14 +1,28 @@
+const { green } = require("@material-ui/core/colors");
+
 var greenPoints = 0;
 var redPoints = 0;
 let bonusRound;
 let tossRound;
 let buzzerTimeout;
 let currentBuzzing;
+let answerWrong;
+let attempts;
+let question;
+let interrupt;
 function resetVariables() {
+	// various types of rounds
 	tossRound = false;
+	interrupt = false;
 	bonusRound = false;
+
+	// the team that's currently buzzing
 	currentBuzzing = "";
 	buzzerTimeout = null;
+	answerWrong = false;
+	attempts = 0;
+	question = false;
+	
 }
 
 function start(message, args) {
@@ -17,32 +31,33 @@ function start(message, args) {
 	return message.channel.send("Game has started");
 }
 
-function view(message, args) {
-	return message.channel.send(`Green: ${greenPoints} Red: ${redPoints}`);
-}
-
-function roundEnd(message, args) {
-	// reset all variables to defaults
-	resetVariables();
-	return message.channel.send("Round has just ended.");
-}
-
 function tossUp(message, args) {
+	if (args[1] == "q") {
+		tossRound = true;
+		return message.channel.send("Toss Up question is now being read.");
+	} else if (args[1] == "t") {
+		buzzerTimeout = message.client.setTimeout(() => {
+			message.channel.send("Toss up is over!");
+			tossRound = false;
+		}, 5000);
+		return message.channel.send("Toss up has started!");
+	}
 	tossRound = true;
 	// after 5 seconds, toss up round should end
-	buzzerTimeout = message.client.setTimeout(() => {
-		message.channel.send("Toss up is over!");
-		toss = false;
-	}, 5000);
-	return message.channel.send("Toss up has started!");
-}
-
-function bonus(message, args) {
-	bonusRound = true;
 }
 
 function buzz(message, args) {
 	// if a toss up round hasn't started, return an error message
+
+	// if a team is wrong, its players should not be able to buzz
+	if (
+		answerWrong &&
+		message.member.displayName.split(" ")[0].toLowerCase() != currentBuzzing
+	) {
+		answerWrong = false;
+		return message.channel.send("Your team can't buzz now.");
+	}
+	// if someone buzzes without there being a toss up round, cancel their buzz
 	if (!tossRound) {
 		return message.channel.send("Error: Tossup round hasn't started yet.");
 	}
@@ -53,10 +68,18 @@ function buzz(message, args) {
 		);
 	}
 	// if someone buzzes, then the 5 second timer is stopped.
-	message.client.clearTimeout(buzzerTimeout);
 	displayName = message.member.displayName;
 	currentBuzzing = displayName.split(" ")[0].toLowerCase();
+	message.client.clearTimeout(buzzerTimeout);
 	return message.channel.send(`**${displayName}**, please state your answer.`);
+}
+
+function bonus(message, args) {
+	bonusRound = true;
+	buzzerTimeout = message.client.setTimeout(() => {
+		message.channel.send("Bonus round is over!");
+		bonusRound = false;
+	}, 20000);
 }
 
 function right(message, args) {
@@ -69,7 +92,7 @@ function right(message, args) {
 		} else {
 			return message.channel.send("Contact **Michael Nath**");
 		}
-	} else if (args[1] == "b") {
+	} else if (bonusRound) {
 		bonusRound = false;
 		if (currentBuzzing == "green") {
 			greenPoints += 10;
@@ -83,8 +106,14 @@ function right(message, args) {
 }
 
 function wrong(message, args) {
+	answerWrong = true;
+	if (attempts == 1) {
+		return roundEnd(message, args);
+	}
 	if (tossRound) {
+		attempts += 1;
 		// switches the team that's now buzzing
+		console.log("Switching should be happening rn");
 		if (currentBuzzing == "green") {
 			currentBuzzing = "red";
 		} else if (currentBuzzing == "red") {
@@ -92,29 +121,39 @@ function wrong(message, args) {
 		} else {
 			return message.channel.send("Contact **Michael Nath**");
 		}
-		message.channel.send("Opposing team, get ready...");
+		message.channel.send("Opposing team, you may buzz now...");
 		// effectively gives people three seconds to get ready to buzz.
-		let i = 2;
-		bufferTimeout = message.client.setInterval(() => {
-			if (i != 0) {
-				message.channel.send(i);
-			} else {
-				message.client.clearTimeout(bufferTimeout);
-				message.channel.send("You may buzz now!");
-			}
-			i -= 1;
-		}, 1000);
+		// let i = 2;
+		// bufferTimeout = message.client.setInterval(() => {
+		// 	if (i != 0) {
+		// 		message.channel.send(i);
+		// 	} else {
+		// 		message.client.clearTimeout(bufferTimeout);
+		// 		message.channel.send("You may buzz now!");
+		// 	}
+		// 	i -= 1;
+		// }, 1000);
 		// after three seconds are over, the other team will oficially have 5 seconds to buzz in.
 		buzzerTimeout = message.client.setTimeout(() => {
 			message.channel.send("Toss up is over!");
-			toss = false;
-		}, 8050);
+			tossRound = false;
+		}, 6000);
 		return buzzerTimeout;
 	}
 
 	if (bonusRound) {
 		return message.channel.send("Wait for moderator to end round.");
 	}
+}
+
+function view(message, args) {
+	return message.channel.send(`Green: ${greenPoints} Red: ${redPoints}`);
+}
+
+function roundEnd(message, args) {
+	// reset all variables to defaults
+	resetVariables();
+	return message.channel.send("Round has just ended.");
 }
 
 module.exports = {
