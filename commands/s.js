@@ -1,16 +1,26 @@
+const Discord = require("discord.js");
 var greenPoints = 0;
 var redPoints = 0;
 var qNum = 1;
 let bonusRound;
 let tossRound;
 let buzzerTimeout;
+let warningTimeout;
 let currentBuzzing;
 let answerWrong;
 let attempts;
 let question;
 let interrupt;
 let buzzedAlready;
-function resetVariables() {
+let buzzerEmbed = new Discord.MessageEmbed();
+buzzerEmbed
+	.setTitle("BUZZ!")
+	.setAuthor("Science Bowl Helper")
+	.setThumbnail(
+		"https://cdn.discordapp.com/attachments/747915124718829679/764537012148895764/buzz_1.png"
+	);
+function resetVariables(message, args) {
+	buzzerEmbed.fields = [];
 	// various types of rounds
 	tossRound = false;
 	interrupt = false;
@@ -20,6 +30,9 @@ function resetVariables() {
 	currentBuzzing = "";
 	// a future timeout object that will serve as buzzer timer
 	buzzerTimeout = null;
+	// a future timeout object that will serve as bonus warning timer
+
+	warningTimeout = null;
 	// needed to handle wrong logic
 	answerWrong = false;
 	// if attempts == 1 -> both teams got question wrong and round ends
@@ -55,7 +68,6 @@ function tossUp(message, args) {
 		buzzerTimeout = message.client.setTimeout(() => {
 			message.channel.send("Toss up is over!");
 			return view(message, args);
-			tossRound = false;
 		}, 5000);
 		return message.channel.send("Toss up question has finished being read!");
 	} else {
@@ -66,13 +78,16 @@ function tossUp(message, args) {
 }
 
 function buzz(message, args) {
+	buzzerEmbed.fields = [];
 	// if a team is wrong, its players should not be able to buzz
 	if (message.member.roles.cache.find((r) => r.name === "Moderator")) {
 		return message.channel.send("You must be a **player** to buzz.");
 	}
 	if (
 		answerWrong &&
-		message.member.displayName.split(" ")[0].toLowerCase() != currentBuzzing
+		!message.member.roles.cache.find(
+			(r) => r.name.toLowerCase() === currentBuzzing
+		)
 	) {
 		return message.channel.send("Your team can't buzz now.");
 	}
@@ -90,14 +105,23 @@ function buzz(message, args) {
 	userName = message.member.user.username;
 	if (message.member.roles.cache.find((r) => r.name === "Green")) {
 		currentBuzzing = "green";
-	} else currentBuzzing = "red";
+		buzzerEmbed.setColor("#50c878");
+	} else {
+		currentBuzzing = "red";
+		buzzerEmbed.setColor("#ed2939");
+	}
 	buzzedAlready = true;
 	message.client.clearTimeout(buzzerTimeout);
 	if (question) {
-		message.channel.send("**INTERRUPT**");
+		buzzerEmbed.addField(
+			"Interrupt From:",
+			`**${message.member.displayName}**`
+		);
 		interrupt = true;
 	}
-	return message.channel.send(`**${userName}**, please state your answer.`);
+	buzzerEmbed.addField("Team:", `${currentBuzzing.toUpperCase()}`);
+	buzzerEmbed.addField("Message", `**${userName}, STATE YOUR ANSWER**`);
+	return message.channel.send(buzzerEmbed);
 }
 
 function bonus(message, args) {
@@ -107,7 +131,7 @@ function bonus(message, args) {
 		return roundEnd(message, args);
 	}, 20000);
 
-	message.client.setTimeout(() => {
+	warningTimeout = message.client.setTimeout(() => {
 		message.channel.send("**5 SECONDS LEFT...**");
 	}, 15000);
 	return message.channel.send(
@@ -133,6 +157,10 @@ function right(message, args) {
 }
 
 function wrong(message, args) {
+	if (bonusRound) {
+		view(message, args);
+		return roundEnd(message, args);
+	}
 	answerWrong = true;
 	if (currentBuzzing == "green") {
 		currentBuzzing = "red";
@@ -168,11 +196,6 @@ function wrong(message, args) {
 		}
 		return buzzerTimeout;
 	}
-
-	if (bonusRound) {
-		view(message, args);
-		return message.channel.send("Wait for moderator to end round.");
-	}
 }
 
 function view(message, args) {
@@ -190,9 +213,41 @@ function awardPoints(team, amnt, message) {
 function roundEnd(message, args) {
 	// reset all variables to defaults
 	message.client.clearTimeout(buzzerTimeout);
-	resetVariables();
+	message.client.clearTimeout(warningTimeout);
+	resetVariables(message, args);
 	return message.channel.send(
 		`**QUESTION ${qNum} HAS JUST ENDED.\n————QUESTION ${++qNum}————**`
+	);
+}
+
+function add(message, args) {
+	if (!message.member.roles.cache.find((r) => r.name === "Moderator")) {
+		return message.channel.send(
+			"You must be a **moderator** to use this command."
+		);
+	}
+	amnt = parseInt(args[1], 10);
+	if (args[2] === "g") {
+		greenPoints += amnt;
+	} else if (args[2] === "r") {
+		redPoints += amnt;
+	}
+	return message.channel.send("Points have been **manually** added.");
+}
+
+function stop(message, args) {
+	if (!message.member.roles.cache.find((r) => r.name === "Moderator")) {
+		return message.channel.send(
+			"You must be a **moderator** to use this command."
+		);
+	}
+	message.client.clearTimeout(buzzerTimeout);
+	message.client.clearTimeout(warningTimeout);
+	resetVariables(message, args);
+	greenPoints = 0;
+	redPoints = 0;
+	return message.channel.send(
+		"Game has ended. Please start it again if you'd like to keep playing."
 	);
 }
 
@@ -205,8 +260,8 @@ module.exports = {
 		switch (args[0]) {
 			case "start":
 				return start(message, args);
-			// case "stop":
-			// 	return stop(message, args);
+			case "stop":
+				return stop(message, args);
 			case "qend":
 				return roundEnd(message, args);
 			case "v":
@@ -221,6 +276,8 @@ module.exports = {
 				return wrong(message, args);
 			case "bo":
 				return bonus(message, args);
+			case "add":
+				return add(message, args);
 		}
 	},
 };
