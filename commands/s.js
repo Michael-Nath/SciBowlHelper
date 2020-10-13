@@ -11,7 +11,7 @@ function start(message, args) {
 		);
 	}
 
-	const gameCode = Math.trunc(100000 * Math.random());
+	const gameCode = Math.trunc(1000000 * Math.random());
 	const modId = message.author.id;
 	const newGame = new Game(gameCode);
 	games.set(modId, newGame);
@@ -22,14 +22,27 @@ function start(message, args) {
 	);
 }
 
-function inspect(message, args) {
-	if (!message.member.roles.cache.find((r) => r.name === "Moderator")) {
+function join(message, args) {
+	if (message.member.roles.cache.find((r) => r.name === "Moderator")) {
 		return message.channel.send(
-			"You must be a **moderator** to use this command."
+			"You must be a **player** to use this command."
 		);
 	}
-	const modId = message.author.id;
-	return message.channel.send(JSON.stringify(games.get(modId)));
+	const player = message.author.id;
+	const gameid = args[1];
+	games.set(player, games.find(game => game.gameCode == gameid))
+	return message.channel.send('successfully joined');
+}
+
+function leave(message, args) {
+	if (message.member.roles.cache.find((r) => r.name === "Moderator")) {
+		return message.channel.send(
+			"You must be a **player** to use this command."
+		);
+	}
+	const id = message.author.id;
+	games.delete(id);
+	return message.channel.send("successfully left");
 }
 
 function stop(message, args) {
@@ -38,16 +51,22 @@ function stop(message, args) {
 			"You must be a **moderator** to use this command."
 		);
 	}
-	message.client.clearTimeout(buzzerTimeout);
-	message.client.clearTimeout(warningTimeout);
-	resetVariables(message, args);
-	greenPoints = 0;
-	redPoints = 0;
-	qNum = 0;
-	return message.channel.send(
-		"Game has ended. Please start it again if you'd like to keep playing."
-	);
+
+	const modId = message.author.id;
+	const game = games.get(modId);
+	games.sweep(g => g.gameCode == game.gameCode);
+	return message.channel.send("successfully deleted");
+
 }
+
+function inspect(message, args) {
+	const id = message.author.id;
+	if (games.get(id)) {
+		return message.channel.send(JSON.stringify(games.get(id)));
+	}
+	return message.channel.send("no game available");
+}
+
 
 module.exports = {
 	name: "s",
@@ -63,6 +82,8 @@ module.exports = {
 				return stop(message, args);
 			case "qend":
 				return roundEnd(message, args);
+			case 'join':
+				return join(message, args);
 			case "v":
 				return view(message, args);
 			case "tu":
