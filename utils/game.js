@@ -124,10 +124,12 @@ class Game {
 		answerWrong = true;
 		if (this.currentBuzzing == "green") {
 			this.currentBuzzing = "red";
+			return "WRONG"
 		} else if (this.currentBuzzing == "red") {
 			this.currentBuzzing = "green";
+			return "WRONG"
 		} else {
-			return message.channel.send("Contact **Michael Nath**");
+			return "Contact **Michael Nath**";
 		}
 		if (this.attempts == 1) {
 			if (this.interrupt) {
@@ -147,22 +149,17 @@ class Game {
 					"Opposing team, wait for mod to reread question."
 				);
 			} else {
-				message.channel.send("Opposing team, you may buzz now...");
-				buzzerTimeout = message.client.setTimeout(() => {
-					message.channel.send("Toss up is over!");
-					view(message, args);
-					tossRound = false;
-				}, 6000);
+				//restart timer
+				return "Opposing team, you may buzz now...";
 			}
-			return buzzerTimeout;
 		}
 	}
 
 	view() {
-		return (
+		return
 			"The score is now:\n" +
 			`Green: ${this.greenPoints} Red: ${this.redPoints}`
-		);
+		;
 	}
 
 	awardPoints(team, amnt) {
@@ -180,14 +177,13 @@ class Game {
 		return `**QUESTION ${qNum} HAS JUST ENDED.\n————QUESTION ${++qNum}————**`;
 	}
 
-	add() {
-		amnt = parseInt(args[1], 10);
-		if (args[2] === "g") {
-			greenPoints += amnt;
-		} else if (args[2] === "r") {
-			redPoints += amnt;
+	add(amnt, team) {
+		if (team === "g") {
+			this.greenPoints += amnt;
+		} else if (team === "r") {
+			this.redPoints += amnt;
 		}
-		return message.channel.send("Points have been **manually** added.");
+		return "Points have been **manually** added.";
 	}
 
 	inspect() {
