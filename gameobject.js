@@ -50,7 +50,10 @@ class GameObject {
   	// if a team is wrong, its players should not be able to buzz
     let buzzerEmbed = new Discord.MessageEmbed();
     buzzerEmbed.fields = [];
-
+    buzzerEmbed.setTitle("BUZZ!")
+  	.setAuthor("Science Bowl Helper")
+  	.setThumbnail(
+  		"https://cdn.discordapp.com/attachments/747915124718829679/764537012148895764/buzz_1.png")
   	if (
   		this.answerWrong &&
   		!member.roles.cache.find(
@@ -177,12 +180,7 @@ class GameObject {
   	return `**QUESTION ${qNum} HAS JUST ENDED.\n————QUESTION ${++qNum}————**`;
   }
 
-  function add(message, args) {
-  	if (!message.member.roles.cache.find((r) => r.name === "Moderator")) {
-  		return message.channel.send(
-  			"You must be a **moderator** to use this command."
-  		);
-  	}
+  function add() {
   	amnt = parseInt(args[1], 10);
   	if (args[2] === "g") {
   		greenPoints += amnt;
@@ -190,23 +188,6 @@ class GameObject {
   		redPoints += amnt;
   	}
   	return message.channel.send("Points have been **manually** added.");
-  }
-
-  function stop(message, args) {
-  	if (!message.member.roles.cache.find((r) => r.name === "Moderator")) {
-  		return message.channel.send(
-  			"You must be a **moderator** to use this command."
-  		);
-  	}
-  	message.client.clearTimeout(buzzerTimeout);
-  	message.client.clearTimeout(warningTimeout);
-  	resetVariables(message, args);
-  	greenPoints = 0;
-  	redPoints = 0;
-  	qNum = 0;
-  	return message.channel.send(
-  		"Game has ended. Please start it again if you'd like to keep playing."
-  	);
   }
 
 }
