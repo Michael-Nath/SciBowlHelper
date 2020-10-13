@@ -246,6 +246,7 @@ function stop(message, args) {
 	resetVariables(message, args);
 	greenPoints = 0;
 	redPoints = 0;
+	qNum = 0;
 	return message.channel.send(
 		"Game has ended. Please start it again if you'd like to keep playing."
 	);
