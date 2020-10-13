@@ -1,4 +1,5 @@
 const Discord = require("discord.js");
+//commands will be of structure return message.channel.send(game.function)
 var greenPoints = 0;
 var redPoints = 0;
 var qNum = 1;
