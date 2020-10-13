@@ -22,6 +22,7 @@ class GameObject {
 
   constructor() {
   	// at the start of every round, reset all variables to defaults
+    this.qNum = 0;
     resetVariables();
   }
 
@@ -117,27 +118,25 @@ class GameObject {
   	return "Points have successfully been added." + view();
   }
 
-  function wrong(message, args) {
-  	if (bonusRound) {
-  		view(message, args);
-  		return roundEnd(message, args);
+  function wrong() {
+  	if (this.bonusRound) {
+  		return view() + "\n" + roundEnd();
   	}
   	answerWrong = true;
-  	if (currentBuzzing == "green") {
-  		currentBuzzing = "red";
-  	} else if (currentBuzzing == "red") {
-  		currentBuzzing = "green";
+  	if (this.currentBuzzing == "green") {
+  		this.currentBuzzing = "red";
+  	} else if (this.currentBuzzing == "red") {
+  		this.currentBuzzing = "green";
   	} else {
   		return message.channel.send("Contact **Michael Nath**");
   	}
-  	if (attempts == 1) {
-  		if (interrupt) {
-  			awardPoints(currentBuzzing, 4, message);
+  	if (this.attempts == 1) {
+  		if (this.interrupt) {
+  			awardPoints(this.currentBuzzing, 4);
   		}
-  		view(message, args);
-  		return roundEnd(message, args);
+  		return view() + roundEnd(message, args);
   	}
-  	if (tossRound) {
+  	if (this.tossRound) {
   		attempts += 1;
   		// switches the team that's now buzzing
   		buzzedAlready = false;
@@ -163,20 +162,19 @@ class GameObject {
   	return "The score is now:\n"  + `Green: ${this.greenPoints} Red: ${this.redPoints}`;
   }
 
-  function awardPoints(team, amnt, message) {
+  function awardPoints(team, amnt) {
   	if (team == "green") {
-  		greenPoints += amnt;
+  		this.greenPoints += amnt;
   	} else if (team == "red") {
-  		redPoints += amnt;
-  	} else return message.channel.send("**ERROR**. Contact **Michael Nath**");
+  		this.redPoints += amnt;
+  	} //else return message.channel.send("**ERROR**. Contact **Michael Nath**");
   }
 
-  function roundEnd(message, args) {
+  function roundEnd() {
   	// reset all variables to defaults
-  	resetVariables(message, args);
-  	return message.channel.send(
-  		`**QUESTION ${qNum} HAS JUST ENDED.\n————QUESTION ${++qNum}————**`
-  	);
+    let qNum = this.qNum;
+    resetVariables();
+  	return `**QUESTION ${qNum} HAS JUST ENDED.\n————QUESTION ${++qNum}————**`;
   }
 
   function add(message, args) {
