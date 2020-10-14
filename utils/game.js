@@ -184,7 +184,7 @@ class Game {
 		return `**QUESTION ${qNum} HAS JUST ENDED.\n————QUESTION ${++qNum}————**`;
 	}
 
-	add(amnt, team) {
+	add(team, amnt) {
 		if (team === "g") {
 			this.greenPoints += amnt;
 		} else if (team === "r") {

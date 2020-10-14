@@ -115,13 +115,61 @@ function wrong(message, args, game) {
 	);
 }
 function view(message, args, game) {
-	return message.channel.send(game.view())
+	if (game) {
+		return message.channel.send(game.view());
+	} else {
+		return message.channel.send("There is no game");
+	}
 }
 
 function roundEnd(message, args, game) {
-	return message.channel.send(game.roundEnd(message))
+	if (!isModerator(message)) {
+		return message.channel.send(
+			"You must be a **moderator** to use this command."
+		);
+	}
+	if (game) {
+		return message.channel.send(game.roundEnd(message));
+	} else {
+		return message.channel.send("There is no game");
+	}
 }
 
+function players(message, args, game) {
+	message.channel.send(`Here are the players for game ${game.gameCode}:`);
+	players = games
+		.filter((g) => g.gameCode == game.gameCode)
+		.map((value, key) =>
+			message.channel.send(message.guild.members.cache.get(key).user.username)
+		);
+
+	return message.channel.send("Done");
+}
+function add(message, args, game) {
+	if (!isModerator(message)) {
+		return message.channel.send(
+			"You must be a **moderator** to use this command."
+		);
+	}
+	if (game) {
+		let team = args[1];
+		let points = args[2];
+		if (team != "g" && team != "r") {
+			return message.channel.send(
+				'Points need to be added to either red team "r" or green team "g"'
+			);
+		}
+		try {
+			return message.channel.send(add(parseInt(points), team));
+		} catch (error) {
+			return message.channel.send(
+				"You need to add an integer number of points"
+			);
+		}
+	} else {
+		return message.channel.send("There is no game");
+	}
+}
 module.exports = {
 	name: "s",
 	description: "Score Keeper and Match Assistant",
@@ -132,32 +180,34 @@ module.exports = {
 		const author = message.author.id;
 		const game = games.get(author);
 		switch (args[0]) {
-			case "start":
+			case "start": // check
 				return start(message, args);
-			case "stop":
+			case "stop": // check
 				return stop(message, args, game);
-			case "qend":
+			case "qend": //check
 				return roundEnd(message, args);
-			case "join":
+			case "join": //check
 				return join(message, args);
-			case "v":
+			case "v": //check
 				return view(message, args, game);
-			case "tu":
+			case "tu": // check
 				return tossUp(message, args, game);
-			case "bz":
+			case "bz": // check
 				return buzz(message, args, game);
-			case "r":
+			case "r": // check
 				return right(message, args, game);
-			case "w":
+			case "w": // check
 				return wrong(message, args, game);
-			case "bo":
+			case "bo": // check
 				return bonus(message, args, game);
 			case "add":
-				return add(message, args);
-			case "inspect":
+				return add(message, args, game);
+			case "inspect": // check
 				return inspect(message, args, game);
-			case "leave":
+			case "leave": // check
 				return leave(message, args, game);
+			case "players": // check
+				return players(message, args, game);
 		}
 	},
 };
