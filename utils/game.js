@@ -1,3 +1,4 @@
+const Discord = require("discord.js");
 class Game {
 	resetVariables() {
 		// various types of rounds
@@ -31,7 +32,7 @@ class Game {
 			this.tossRound = true;
 			this.question = true;
 			return "Toss Up question is now being read.";
-		} else if (arg == "start") {
+		} else if (arg == "t") {
 			this.question = false;
 			// after 5 seconds, toss up round should end
 			return "Toss up question has finished being read!";
@@ -70,7 +71,7 @@ class Game {
 			return "Error: Cannot buzz while someone else is buzzing.";
 		}
 		// if someone buzzes, then the 5 second timer is stopped.
-		userName = member.user.username;
+		const userName = member.user.username;
 		if (member.roles.cache.find((r) => r.name === "Green")) {
 			this.currentBuzzing = "green";
 			buzzerEmbed.setColor("#50c878");
@@ -81,13 +82,10 @@ class Game {
 
 		this.buzzedAlready = true;
 		if (this.question) {
-			buzzerEmbed.addField(
-				"Interrupt From:",
-				`**${message.member.displayName}**`
-			);
+			buzzerEmbed.addField("Interrupt From:", `**${member.displayName}**`);
 			this.interrupt = true;
 		}
-		buzzerEmbed.addField("Team:", `${currentBuzzing.toUpperCase()}`);
+		buzzerEmbed.addField("Team:", `${this.currentBuzzing.toUpperCase()}`);
 		buzzerEmbed.addField("Message", `**${userName}, STATE YOUR ANSWER**`);
 		return buzzerEmbed;
 	}
@@ -124,10 +122,10 @@ class Game {
 		answerWrong = true;
 		if (this.currentBuzzing == "green") {
 			this.currentBuzzing = "red";
-			return "WRONG"
+			return "WRONG";
 		} else if (this.currentBuzzing == "red") {
 			this.currentBuzzing = "green";
-			return "WRONG"
+			return "WRONG";
 		} else {
 			return "Contact **Michael Nath**";
 		}
@@ -156,10 +154,8 @@ class Game {
 	}
 
 	view() {
-		return
-			"The score is now:\n" +
-			`Green: ${this.greenPoints} Red: ${this.redPoints}`
-		;
+		return;
+		"The score is now:\n" + `Green: ${this.greenPoints} Red: ${this.redPoints}`;
 	}
 
 	awardPoints(team, amnt) {
