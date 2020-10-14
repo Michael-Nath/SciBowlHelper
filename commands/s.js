@@ -27,7 +27,7 @@ function start(message, args) {
 }
 
 function join(message, args) {
-	if (message.member.roles.cache.has("760208780485984306")) {
+	if (isModerator(message)) {
 		return message.channel.send(
 			"You must be a **player** to use this command."
 		);
@@ -47,7 +47,6 @@ function right(message, args, game) {
 			"You must be a **moderator** to use this command."
 		);
 	}
-	console.log(game);
 	if (game) {
 		return message.channel.send(game.right());
 	} else {
@@ -61,12 +60,14 @@ function leave(message, args, game) {
 			"You must be a **moderator** to use this command."
 		);
 	}
+
 	const id = message.author.id;
 	if (!game) {
 		return message.channel.send(
 			"You must be a part of an existing game in order to leave one."
 		);
 	}
+
 	games.delete(id);
 	return message.channel.send("You have succesfully left the game.");
 }
@@ -78,7 +79,7 @@ function stop(message, args, game) {
 		);
 	}
 	games.sweep((g) => g.gameCode == game.gameCode);
-	return message.channel.send("successfully deleted");
+	return message.channel.send("Game Successfully Ended");
 }
 
 function inspect(message, args, game) {
@@ -113,6 +114,13 @@ function wrong(message, args, game) {
 		"You cannot use that command right now. You must be both a moderator and in an active game."
 	);
 }
+function view(message, args, game) {
+	return message.channel.send(game.view())
+}
+
+function roundEnd(message, args, game) {
+	return message.channel.send(game.roundEnd(message))
+}
 
 module.exports = {
 	name: "s",
@@ -133,7 +141,7 @@ module.exports = {
 			case "join":
 				return join(message, args);
 			case "v":
-				return view(message, args);
+				return view(message, args, game);
 			case "tu":
 				return tossUp(message, args, game);
 			case "bz":
