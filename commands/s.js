@@ -15,7 +15,7 @@ function start(message, args) {
 		);
 	}
 
-	const gameCode = Math.trunc(1000000 * Math.random());
+	const gameCode = Math.trunc(10000 * Math.random());
 	const modId = message.author.id;
 	const newGame = new Game(gameCode);
 	games.set(modId, newGame);
@@ -39,6 +39,20 @@ function join(message, args) {
 		games.find((game) => game.gameCode == gameid)
 	);
 	return message.channel.send("successfully joined");
+}
+
+function right(message, args, game) {
+	if (!isModerator(message)) {
+		return message.channel.send(
+			"You must be a **moderator** to use this command."
+		);
+	}
+	console.log(game);
+	if (game) {
+		return message.channel.send(game.right());
+	} else {
+		return message.channel.send("no game available");
+	}
 }
 
 function leave(message, args, game) {
@@ -76,19 +90,27 @@ function inspect(message, args, game) {
 }
 
 function buzz(message, args, game) {
-	const member = message.member;
 	if (game) {
-		return message.channel.send(game.buzz(member));
+		return message.channel.send(game.buzz(message));
 	}
 	return message.channel.send("You have to be in a game to buzz.");
 }
 
 function tossUp(message, args, game) {
 	if (isModerator && game) {
-		return message.channel.send(game.tossUp(args[1]));
+		return message.channel.send(game.tossUp(message, args[1]));
 	}
 	return message.channel.send(
 		"You cannot use that command right now. You must be both be a moderator and in an active game."
+	);
+}
+
+function wrong(message, args, game) {
+	if (isModerator && game) {
+		return message.channel.send(game.wrong(message));
+	}
+	return message.channel.send(
+		"You cannot use that command right now. You must be both a moderator and in an active game."
 	);
 }
 
@@ -117,11 +139,11 @@ module.exports = {
 			case "bz":
 				return buzz(message, args, game);
 			case "r":
-				return right(message, args);
+				return right(message, args, game);
 			case "w":
-				return wrong(message, args);
+				return wrong(message, args, game);
 			case "bo":
-				return bonus(message, args);
+				return bonus(message, args, game);
 			case "add":
 				return add(message, args);
 			case "inspect":
