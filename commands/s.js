@@ -34,11 +34,12 @@ function join(message, args) {
 	}
 	const player = message.author.id;
 	const gameid = args[1];
-	games.set(
-		player,
-		games.find((game) => game.gameCode == gameid)
-	);
-	return message.channel.send("successfully joined");
+	const game = games.find((game) => game.gameCode == gameid);
+	if (game) {
+		games.set(player, game);
+		return message.channel.send("successfully joined");
+	}
+	return message.channel.send("there is no game with that code");
 }
 
 function right(message, args, game) {
@@ -48,14 +49,14 @@ function right(message, args, game) {
 		);
 	}
 	if (game) {
-		return message.channel.send(game.right());
+		return message.channel.send(game.right(message));
 	} else {
 		return message.channel.send("no game available");
 	}
 }
 
 function leave(message, args, game) {
-	if (!isModerator(message)) {
+	if (isModerator(message)) {
 		return message.channel.send(
 			"You must be a **moderator** to use this command."
 		);
@@ -136,6 +137,9 @@ function roundEnd(message, args, game) {
 }
 
 function players(message, args, game) {
+	if (!game) {
+		return message.channel.send("You are not part of a game!");
+	}
 	message.channel.send(`Here are the players for game ${game.gameCode}:`);
 	players = games
 		.filter((g) => g.gameCode == game.gameCode)
@@ -170,6 +174,19 @@ function add(message, args, game) {
 		return message.channel.send("There is no game");
 	}
 }
+
+function bonus(message, args, game) {
+	if (!isModerator(message)) {
+		return message.channel.send(
+			"You must be a **moderator** to use this command."
+		);
+	}
+
+	if (game) {
+		return message.channel.send(game.bonus(message));
+	}
+	return message.channel.send("You are not part of a game");
+}
 module.exports = {
 	name: "s",
 	description: "Score Keeper and Match Assistant",
@@ -185,7 +202,7 @@ module.exports = {
 			case "stop": // check
 				return stop(message, args, game);
 			case "qend": //check
-				return roundEnd(message, args);
+				return roundEnd(message, args, game);
 			case "join": //check
 				return join(message, args);
 			case "v": //check
@@ -200,7 +217,7 @@ module.exports = {
 				return wrong(message, args, game);
 			case "bo": // check
 				return bonus(message, args, game);
-			case "add":
+			case "add": // check
 				return add(message, args, game);
 			case "inspect": // check
 				return inspect(message, args, game);

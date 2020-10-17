@@ -3,20 +3,16 @@ class Game {
 	resetVariables() {
 		// various types of rounds
 		this.tossRound = false;
-		this.interrupt = false;
 		this.bonusRound = false;
-
 		// the team that's currently buzzing
 		this.currentBuzzing = "";
 		// a future timeout object that will serve as buzzer timer
 		this.buzzerTimeout = null;
 		// a future timeout object that will serve as bonus warning timer
-
 		this.warningTimeout = null;
 		// needed to handle wrong logic
 		this.answerWrong = false;
-		// if attempts == 1 -> both teams got question wrong and round ends
-		this.attempts = 0;
+
 		this.question = false;
 		this.buzzedAlready = false;
 	}
@@ -27,6 +23,11 @@ class Game {
 		this.greenPoints = 0;
 		this.redPoints = 0;
 		this.resetVariables();
+	}
+
+	resetTimers(message) {
+		message.client.clearTimeout(this.buzzerTimeout);
+		message.client.clearTimeout(this.warningTimeout);
 	}
 
 	tossUp(message, arg) {
@@ -74,7 +75,7 @@ class Game {
 			return "Error: Tossup round hasn't started yet.";
 		}
 		// if someone has already buzzed, no one else should be buzzing.
-		if (this.currentBuzzing && this.buzzedAlready) {
+		if (this.buzzedAlready) {
 			return "Error: Cannot buzz while someone else is buzzing.";
 		}
 		// if someone buzzes, then the 5 second timer is stopped.
@@ -90,7 +91,6 @@ class Game {
 		this.buzzedAlready = true;
 		if (this.question) {
 			buzzerEmbed.addField("Interrupt From:", `**${member.displayName}**`);
-			this.interrupt = true;
 		}
 		buzzerEmbed.addField("Team:", `${this.currentBuzzing.toUpperCase()}`);
 		buzzerEmbed.addField("Message", `**${userName}, STATE YOUR ANSWER**`);
@@ -101,7 +101,6 @@ class Game {
 		this.bonusRound = true;
 		this.buzzerTimeout = message.client.setTimeout(() => {
 			message.channel.send("**BONUS ROUND IS OVER.**");
-			return this.roundEnd();
 		}, 20000);
 		this.warningTimeout = message.client.setTimeout(() => {
 			message.channel.send("**5 SECONDS LEFT...**");
@@ -109,22 +108,29 @@ class Game {
 		return "**BONUS ROUND HAS STARTED. YOU HAVE 20 SECONDS.**";
 	}
 
-	right() {
+	right(message) {
+		console.log(this.currentBuzzing);
 		if (this.tossRound) {
 			this.tossRound = false;
 			this.awardPoints(this.currentBuzzing, 4);
 		} else if (this.bonusRound) {
-			this.bonusRound = false;
 			this.awardPoints(this.currentBuzzing, 10);
 		}
+		this.resetTimers(message);
 		return "Points have successfully been added." + this.view();
 	}
 
 	wrong(message) {
-		if (this.bonusRound) {
-			return this.view() + "\n" + this.roundEnd();
+		//if no round is active
+		if (!(this.bonusRound || this.tossRound)) {
+			return "There is no active round.";
 		}
-		this.answerWrong = true;
+
+		// if it's a bonus round
+		if (this.bonusRound) {
+			return this.view() + "\n" + this.roundEnd(message);
+		}
+
 		if (this.currentBuzzing == "green") {
 			this.currentBuzzing = "red";
 			message.channel.send("WRONG");
@@ -134,30 +140,31 @@ class Game {
 		} else {
 			message.channel.send("contact **Michael Nath**");
 		}
-		if (this.attempts == 1) {
-			if (this.interrupt) {
-				this.awardPoints(this.currentBuzzing, 4);
-			}
-			return this.view() + this.roundEnd(message);
+
+		if (this.question) {
+			this.awardPoints(this.currentBuzzing, 4);
+			message.channel.send("u interupted and ur wrong :(");
 		}
-		if (this.tossRound) {
-			this.attempts += 1;
-			// switches the team that's now buzzing
-			this.buzzedAlready = false;
-			if (this.interrupt) {
-				this.awardPoints(this.currentBuzzing, 4);
-				return (
-					this.view() + "\n" + "Opposing team, wait for mod to reread question."
-				);
-			} else {
-				buzzerTimeout = message.client.setTimeout(() => {
-					message.channel.send("Toss up is over!");
-					message.channel.send(this.view());
-					this.tossRound = false;
-				}, 6000);
-				return "Opposing team, you may buzz now...";
-			}
+		//if its a toss-up round and both teams get it wrong
+		if (this.answerWrong) {
+			return this.view() + "\n" + this.roundEnd(message);
 		}
+
+		//flip team that can buzz
+		this.answerWrong = true;
+		this.buzzedAlready = false;
+		if (this.question) {
+			return (
+				this.view() + "\n" + "Opposing team, wait for mod to reread question."
+			);
+		}
+
+		this.buzzerTimeout = message.client.setTimeout(() => {
+			message.channel.send("Toss up is over!");
+			message.channel.send(this.view());
+			this.tossRound = false;
+		}, 15000);
+		return "Opposing team, you may buzz now...";
 	}
 
 	view() {
@@ -176,12 +183,16 @@ class Game {
 	}
 
 	roundEnd(message) {
+		let s = "";
+		if (this.bonusRound) {
+			s = "**BONUS ROUND HAS ENDED**\n";
+		}
 		// reset all variables to defaults
-		let qNum = this.qNum;
+		this.resetTimers(message);
 		this.resetVariables();
-		message.client.clearTimeout(this.buzzerTimeout);
-		message.client.clearTimeout(this.warningTimeout);
-		return `**QUESTION ${qNum} HAS JUST ENDED.\n————QUESTION ${++qNum}————**`;
+
+		return `${s}**QUESTION ${this.qNum} HAS JUST ENDED.\n————QUESTION ${++this
+			.qNum}————**`;
 	}
 
 	add(team, amnt) {
@@ -194,11 +205,7 @@ class Game {
 	}
 
 	inspect() {
-		return {
-			tossRound: this.tossRound,
-			interrupt: this.interrupt,
-			gameCode: this.gameCode,
-		};
+		return this;
 	}
 }
 
