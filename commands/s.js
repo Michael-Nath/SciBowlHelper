@@ -1,8 +1,13 @@
 const Discord = require("discord.js");
 const Game = require("../utils/game");
 const games = new Discord.Collection();
+const db = require("../models");
 //commands will be of structure return message.channel.send(game.function)
-
+async function test(message) {
+	players = await db.Player.findAll();
+	players.map((player) => console.log(player.nickname));
+	return message.channel.send("Sde");
+}
 function isModerator(message) {
 	return message.member.roles.cache.has("760208780485984306");
 }
@@ -225,6 +230,8 @@ module.exports = {
 				return leave(message, args, game);
 			case "players": // check
 				return players(message, args, game);
+			case "test":
+				return test(message);
 		}
 	},
 };
