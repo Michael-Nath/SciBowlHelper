@@ -1,285 +1,230 @@
 const Discord = require("discord.js");
+const Game = require("../utils/game");
+const games = new Discord.Collection();
 //commands will be of structure return message.channel.send(game.function)
-var greenPoints = 0;
-var redPoints = 0;
-var qNum = 1;
-let bonusRound;
-let tossRound;
-let buzzerTimeout;
-let warningTimeout;
-let currentBuzzing;
-let answerWrong;
-let attempts;
-let question;
-let interrupt;
-let buzzedAlready;
-let buzzerEmbed = new Discord.MessageEmbed();
-buzzerEmbed
-	.setTitle("BUZZ!")
-	.setAuthor("Science Bowl Helper")
-	.setThumbnail(
-		"https://cdn.discordapp.com/attachments/747915124718829679/764537012148895764/buzz_1.png"
-	);
-function resetVariables(message, args) {
-	buzzerEmbed.fields = [];
-	// various types of rounds
-	tossRound = false;
-	interrupt = false;
-	bonusRound = false;
 
-	// the team that's currently buzzing
-	currentBuzzing = "";
-	// a future timeout object that will serve as buzzer timer
-	buzzerTimeout = null;
-	// a future timeout object that will serve as bonus warning timer
-
-	warningTimeout = null;
-	// needed to handle wrong logic
-	answerWrong = false;
-	// if attempts == 1 -> both teams got question wrong and round ends
-	attempts = 0;
-	question = false;
-	buzzedAlready = false;
+function isModerator(message) {
+	return message.member.roles.cache.has("760208780485984306");
 }
 
 function start(message, args) {
 	// at the start of every round, reset all variables to defaults
-	if (!message.member.roles.cache.find((r) => r.name === "Moderator")) {
+	if (!isModerator(message)) {
 		return message.channel.send(
 			"You must be a **moderator** to use this command."
 		);
 	}
-	resetVariables();
-	return message.channel.send("GAME HAS STARTED.\n————QUESTION 1————");
-}
 
-function tossUp(message, args) {
-	if (!message.member.roles.cache.find((r) => r.name === "Moderator")) {
-		return message.channel.send(
-			"You must be a **moderator** to use this command."
-		);
-	}
-	if (args[1] == "q") {
-		tossRound = true;
-		question = true;
-		return message.channel.send("Toss Up question is now being read.");
-	} else if (args[1] == "t") {
-		question = false;
-		// after 5 seconds, toss up round should end
-		buzzerTimeout = message.client.setTimeout(() => {
-			message.channel.send("Toss up is over!");
-			return view(message, args);
-		}, 5000);
-		return message.channel.send("Toss up question has finished being read!");
-	} else {
-		return message.channel.send(
-			"Please provide either `t` or `q` arg to `!nscore tu`"
-		);
-	}
-}
+	const gameCode = Math.trunc(10000 * Math.random());
+	const modId = message.author.id;
+	const newGame = new Game(gameCode);
+	games.set(modId, newGame);
 
-function buzz(message, args) {
-	buzzerEmbed.fields = [];
-	// if a team is wrong, its players should not be able to buzz
-	if (message.member.roles.cache.find((r) => r.name === "Moderator")) {
-		return message.channel.send("You must be a **player** to buzz.");
-	}
-	if (
-		answerWrong &&
-		!message.member.roles.cache.find(
-			(r) => r.name.toLowerCase() === currentBuzzing
-		)
-	) {
-		return message.channel.send("Your team can't buzz now.");
-	}
-	// if someone buzzes without there being a toss up round, cancel their buzz
-	if (!tossRound) {
-		return message.channel.send("Error: Tossup round hasn't started yet.");
-	}
-	// if someone has already buzzed, no one else should be buzzing.
-	if (currentBuzzing && buzzedAlready) {
-		return message.channel.send(
-			"Error: Cannot buzz while someone else is buzzing."
-		);
-	}
-	// if someone buzzes, then the 5 second timer is stopped.
-	userName = message.member.user.username;
-	if (message.member.roles.cache.find((r) => r.name === "Green")) {
-		currentBuzzing = "green";
-		buzzerEmbed.setColor("#50c878");
-	} else {
-		currentBuzzing = "red";
-		buzzerEmbed.setColor("#ed2939");
-	}
-	buzzedAlready = true;
-	message.client.clearTimeout(buzzerTimeout);
-	if (question) {
-		buzzerEmbed.addField(
-			"Interrupt From:",
-			`**${message.member.displayName}**`
-		);
-		interrupt = true;
-	}
-	buzzerEmbed.addField("Team:", `${currentBuzzing.toUpperCase()}`);
-	buzzerEmbed.addField("Message", `**${userName}, STATE YOUR ANSWER**`);
-	return message.channel.send(buzzerEmbed);
-}
-
-function bonus(message, args) {
-	bonusRound = true;
-	buzzerTimeout = message.client.setTimeout(() => {
-		message.channel.send("**BONUS ROUND IS OVER.**");
-		return roundEnd(message, args);
-	}, 20000);
-
-	warningTimeout = message.client.setTimeout(() => {
-		message.channel.send("**5 SECONDS LEFT...**");
-	}, 15000);
+	// game has started. join through this code: fgsdkstfghret
 	return message.channel.send(
-		"**BONUS ROUND HAS STARTED. YOU HAVE 20 SECONDS.**"
+		`GAME HAS STARTED. PLEASE JOIN THROUGH THIS CODE: ${gameCode}`
 	);
 }
 
-function right(message, args) {
-	if (!message.member.roles.cache.find((r) => r.name === "Moderator")) {
+function join(message, args) {
+	if (isModerator(message)) {
+		return message.channel.send(
+			"You must be a **player** to use this command."
+		);
+	}
+	const player = message.author.id;
+	const gameid = args[1];
+	const game = games.find((game) => game.gameCode == gameid);
+	if (game) {
+		games.set(player, game);
+		return message.channel.send("successfully joined");
+	}
+	return message.channel.send("there is no game with that code");
+}
+
+function right(message, args, game) {
+	if (!isModerator(message)) {
 		return message.channel.send(
 			"You must be a **moderator** to use this command."
 		);
 	}
-	if (tossRound) {
-		tossRound = false;
-		awardPoints(currentBuzzing, 4, message);
-	} else if (bonusRound) {
-		bonusRound = false;
-		awardPoints(currentBuzzing, 10, message);
+	if (game) {
+		return message.channel.send(game.right(message));
+	} else {
+		return message.channel.send("no game available");
 	}
-	view(message, args);
-	return message.channel.send("Points have successfully been added.");
 }
 
-function wrong(message, args) {
-	if (bonusRound) {
-		view(message, args);
-		return roundEnd(message, args);
+function leave(message, args, game) {
+	if (isModerator(message)) {
+		return message.channel.send(
+			"You must be a **moderator** to use this command."
+		);
 	}
-	answerWrong = true;
-	if (currentBuzzing == "green") {
-		currentBuzzing = "red";
-	} else if (currentBuzzing == "red") {
-		currentBuzzing = "green";
+
+	const id = message.author.id;
+	if (!game) {
+		return message.channel.send(
+			"You must be a part of an existing game in order to leave one."
+		);
+	}
+
+	games.delete(id);
+	return message.channel.send("You have succesfully left the game.");
+}
+
+function stop(message, args, game) {
+	if (!isModerator(message)) {
+		return message.channel.send(
+			"You must be a **moderator** to use this command."
+		);
+	}
+	games.sweep((g) => g.gameCode == game.gameCode);
+	return message.channel.send("Game Successfully Ended");
+}
+
+function inspect(message, args, game) {
+	if (game) {
+		return message.channel.send(JSON.stringify(game));
+	}
+
+	return message.channel.send("no game available");
+}
+
+function buzz(message, args, game) {
+	if (game) {
+		return message.channel.send(game.buzz(message));
+	}
+	return message.channel.send("You have to be in a game to buzz.");
+}
+
+function tossUp(message, args, game) {
+	if (isModerator && game) {
+		return message.channel.send(game.tossUp(message, args[1]));
+	}
+	return message.channel.send(
+		"You cannot use that command right now. You must be both be a moderator and in an active game."
+	);
+}
+
+function wrong(message, args, game) {
+	if (isModerator && game) {
+		return message.channel.send(game.wrong(message));
+	}
+	return message.channel.send(
+		"You cannot use that command right now. You must be both a moderator and in an active game."
+	);
+}
+function view(message, args, game) {
+	if (game) {
+		return message.channel.send(game.view());
 	} else {
-		return message.channel.send("Contact **Michael Nath**");
+		return message.channel.send("There is no game");
 	}
-	if (attempts == 1) {
-		if (interrupt) {
-			awardPoints(currentBuzzing, 4, message);
-		}
-		view(message, args);
-		return roundEnd(message, args);
+}
+
+function roundEnd(message, args, game) {
+	if (!isModerator(message)) {
+		return message.channel.send(
+			"You must be a **moderator** to use this command."
+		);
 	}
-	if (tossRound) {
-		attempts += 1;
-		// switches the team that's now buzzing
-		buzzedAlready = false;
-		if (interrupt) {
-			awardPoints(currentBuzzing, 4, message);
-			view(message, args);
+	if (game) {
+		return message.channel.send(game.roundEnd(message));
+	} else {
+		return message.channel.send("There is no game");
+	}
+}
+
+function players(message, args, game) {
+	if (!game) {
+		return message.channel.send("You are not part of a game!");
+	}
+	message.channel.send(`Here are the players for game ${game.gameCode}:`);
+	players = games
+		.filter((g) => g.gameCode == game.gameCode)
+		.map((value, key) =>
+			message.channel.send(message.guild.members.cache.get(key).user.username)
+		);
+
+	return message.channel.send("Done");
+}
+function add(message, args, game) {
+	if (!isModerator(message)) {
+		return message.channel.send(
+			"You must be a **moderator** to use this command."
+		);
+	}
+	if (game) {
+		let team = args[1];
+		let points = args[2];
+		if (team != "g" && team != "r") {
 			return message.channel.send(
-				"Opposing team, wait for mod to reread question."
+				'Points need to be added to either red team "r" or green team "g"'
 			);
-		} else {
-			message.channel.send("Opposing team, you may buzz now...");
-			buzzerTimeout = message.client.setTimeout(() => {
-				message.channel.send("Toss up is over!");
-				view(message, args);
-				tossRound = false;
-			}, 6000);
 		}
-		return buzzerTimeout;
+		try {
+			return message.channel.send(game.add(team, parseInt(points)));
+		} catch (error) {
+			return message.channel.send(
+				"You need to add an integer number of points"
+			);
+		}
+	} else {
+		return message.channel.send("There is no game");
 	}
 }
 
-function view(message, args) {
-	return message.channel.send(`Green: ${greenPoints} Red: ${redPoints}`);
-}
-
-function awardPoints(team, amnt, message) {
-	if (team == "green") {
-		greenPoints += amnt;
-	} else if (team == "red") {
-		redPoints += amnt;
-	} else return message.channel.send("**ERROR**. Contact **Michael Nath**");
-}
-
-function roundEnd(message, args) {
-	// reset all variables to defaults
-	message.client.clearTimeout(buzzerTimeout);
-	message.client.clearTimeout(warningTimeout);
-	resetVariables(message, args);
-	return message.channel.send(
-		`**QUESTION ${qNum} HAS JUST ENDED.\n————QUESTION ${++qNum}————**`
-	);
-}
-
-function add(message, args) {
-	if (!message.member.roles.cache.find((r) => r.name === "Moderator")) {
+function bonus(message, args, game) {
+	if (!isModerator(message)) {
 		return message.channel.send(
 			"You must be a **moderator** to use this command."
 		);
 	}
-	amnt = parseInt(args[1], 10);
-	if (args[2] === "g") {
-		greenPoints += amnt;
-	} else if (args[2] === "r") {
-		redPoints += amnt;
-	}
-	return message.channel.send("Points have been **manually** added.");
-}
 
-function stop(message, args) {
-	if (!message.member.roles.cache.find((r) => r.name === "Moderator")) {
-		return message.channel.send(
-			"You must be a **moderator** to use this command."
-		);
+	if (game) {
+		return message.channel.send(game.bonus(message));
 	}
-	message.client.clearTimeout(buzzerTimeout);
-	message.client.clearTimeout(warningTimeout);
-	resetVariables(message, args);
-	greenPoints = 0;
-	redPoints = 0;
-	qNum = 0;
-	return message.channel.send(
-		"Game has ended. Please start it again if you'd like to keep playing."
-	);
+	return message.channel.send("You are not part of a game");
 }
-
 module.exports = {
 	name: "s",
 	description: "Score Keeper and Match Assistant",
 	cooldown: 1,
 	args: true,
 	execute(message, args) {
+		// something to retreive specific game object
+		const author = message.author.id;
+		const game = games.get(author);
 		switch (args[0]) {
-			case "start":
+			case "start": // check
 				return start(message, args);
-			case "stop":
-				return stop(message, args);
-			case "qend":
-				return roundEnd(message, args);
-			case "v":
-				return view(message, args);
-			case "tu":
-				return tossUp(message, args);
-			case "bz":
-				return buzz(message, args);
-			case "r":
-				return right(message, args);
-			case "w":
-				return wrong(message, args);
-			case "bo":
-				return bonus(message, args);
-			case "add":
-				return add(message, args);
+			case "stop": // check
+				return stop(message, args, game);
+			case "qend": //check
+				return roundEnd(message, args, game);
+			case "join": //check
+				return join(message, args);
+			case "v": //check
+				return view(message, args, game);
+			case "tu": // check
+				return tossUp(message, args, game);
+			case "bz": // check
+				return buzz(message, args, game);
+			case "r": // check
+				return right(message, args, game);
+			case "w": // check
+				return wrong(message, args, game);
+			case "bo": // check
+				return bonus(message, args, game);
+			case "add": // check
+				return add(message, args, game);
+			case "inspect": // check
+				return inspect(message, args, game);
+			case "leave": // check
+				return leave(message, args, game);
+			case "players": // check
+				return players(message, args, game);
 		}
 	},
 };
