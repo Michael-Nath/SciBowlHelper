@@ -163,7 +163,7 @@ class Game {
 			message.channel.send("Toss up is over!");
 			message.channel.send(this.view());
 			this.tossRound = false;
-		}, 15000);
+		}, 6000);
 		return "Opposing team, you may buzz now...";
 	}
 

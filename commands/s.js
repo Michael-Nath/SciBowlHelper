@@ -164,7 +164,7 @@ function add(message, args, game) {
 			);
 		}
 		try {
-			return message.channel.send(add(parseInt(points), team));
+			return message.channel.send(game.add(team, parseInt(points)));
 		} catch (error) {
 			return message.channel.send(
 				"You need to add an integer number of points"
