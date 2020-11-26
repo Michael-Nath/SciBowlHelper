@@ -1,5 +1,6 @@
 const Discord = require("discord.js");
 const Game = require("../utils/game");
+const Player = require("../utils/player");
 const games = new Discord.Collection();
 const db = require("../models");
 //commands will be of structure return message.channel.send(game.function)
@@ -37,7 +38,10 @@ function join(message, args) {
 			"You must be a **player** to use this command."
 		);
 	}
-	const player = message.author.id;
+	const userName = message.author.username;
+	const userId = message.author.id;
+	const displayName = message.message.displayName;
+	const player = new Player(displayName, userName, userId);
 	const gameid = args[1];
 	const game = games.find((game) => game.gameCode == gameid);
 	if (game) {
@@ -60,6 +64,16 @@ function right(message, args, game) {
 	}
 }
 
+function stats(message, args, game) {
+	if (game) {
+		players = games
+		.filter((g) => g.gameCode == game.gameCode)
+		.map((value, key) =>
+			message.channel.send(message.guild.members.cache.get(key).getStat())
+		);
+	}
+}
+
 function leave(message, args, game) {
 	if (isModerator(message)) {
 		return message.channel.send(
@@ -73,7 +87,6 @@ function leave(message, args, game) {
 			"You must be a part of an existing game in order to leave one."
 		);
 	}
-
 	games.delete(id);
 	return message.channel.send("You have succesfully left the game.");
 }
@@ -154,7 +167,7 @@ function players(message, args, game) {
 	players = games
 		.filter((g) => g.gameCode == game.gameCode)
 		.map((value, key) =>
-			message.channel.send(message.guild.members.cache.get(key).user.username)
+			message.channel.send(message.guild.members.cache.get(key).getUserName())
 		);
 
 	return message.channel.send("Done");
@@ -205,7 +218,7 @@ module.exports = {
 	execute(message, args) {
 		// something to retreive specific game object
 		const author = message.author.id;
-		const game = games.get(author);
+		const game = games.find((_, player, __) => player.getUserId() == author);
 		switch (args[0]) {
 			case "start": // check
 				return start(message, args);
@@ -237,6 +250,8 @@ module.exports = {
 				return players(message, args, game);
 			case "test":
 				return test(message);
+			case "stats":
+				return stats(message, args, game);
 		}
 	},
 };
