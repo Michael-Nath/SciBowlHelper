@@ -142,6 +142,11 @@ function roundEnd(message, args, game) {
 }
 
 function players(message, args, game) {
+	if (!isModerator) {
+		return message.channel.send(
+			"You must be a **moderator** to use this command."
+		);
+	}
 	if (!game) {
 		return message.channel.send("You are not part of a game!");
 	}
