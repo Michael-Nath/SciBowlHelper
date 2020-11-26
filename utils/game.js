@@ -109,7 +109,6 @@ class Game {
 	}
 
 	right(message) {
-		console.log(this.currentBuzzing);
 		if (this.tossRound) {
 			this.tossRound = false;
 			this.awardPoints(this.currentBuzzing, 4);

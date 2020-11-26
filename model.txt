@@ -1,0 +1,7 @@
+Bonus Answered Correctly -> boCorrect 
+Bonus Answered --> boTotal
+Tossup Answered Correctly -> tuCorrect
+Tossup Answered -> tuTotal
+Interrupt Count ->interCorrect
+Interrupt Corrects/Accuracy -> interTotal
+Average time to buzz -> avgBuzz
