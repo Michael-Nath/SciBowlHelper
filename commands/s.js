@@ -1,6 +1,7 @@
 const Discord = require("discord.js");
 const Game = require("../utils/game");
 const Player = require("../utils/player");
+const generateId = require("../utils/gameid");
 const games = new Discord.Collection();
 const db = require("../models");
 //commands will be of structure return message.channel.send(game.function)
@@ -20,8 +21,7 @@ function start(message, args) {
 			"You must be a **moderator** to use this command."
 		);
 	}
-
-	const gameCode = Math.trunc(10000 * Math.random());
+	const gameCode = generateId();
 	const modId = message.author.id;
 	const newGame = new Game(gameCode);
 	games.set(modId, newGame);
