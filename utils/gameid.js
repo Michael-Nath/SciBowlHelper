@@ -3,4 +3,4 @@ function generateID() {
     return gameCode;
 }
 
-module.exports = generateId;
+module.exports = generateID;

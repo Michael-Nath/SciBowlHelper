@@ -14,6 +14,7 @@ class Game {
 		this.answerWrong = false;
 
 		this.question = false;
+		this.lastPersonBuzzed = "";
 		this.buzzedAlready = false;
 	}
 	constructor(gameCode) {
@@ -22,6 +23,7 @@ class Game {
 		this.gameCode = gameCode;
 		this.greenPoints = 0;
 		this.redPoints = 0;
+		this.lastPersonBuzzed = "";
 		this.resetVariables();
 	}
 
@@ -93,8 +95,17 @@ class Game {
 			buzzerEmbed.addField("Interrupt From:", `**${member.displayName}**`);
 		}
 		buzzerEmbed.addField("Team:", `${this.currentBuzzing.toUpperCase()}`);
+		this.lastPersonBuzzed = userName;
 		buzzerEmbed.addField("Message", `**${userName}, STATE YOUR ANSWER**`);
 		return buzzerEmbed;
+	}
+
+	getLastPlayerBuzzed() {
+		return this.lastPersonBuzzed;
+	}
+
+	isBonusRound() {
+		return this.bonusRound;
 	}
 
 	bonus(message) {

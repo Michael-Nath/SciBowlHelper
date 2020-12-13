@@ -23,8 +23,11 @@ function start(message, args) {
 	}
 	const gameCode = generateId();
 	const modId = message.author.id;
+	const userName = message.author.username;
+	const displayName = message.author.displayName;
+	const mod = new Player(displayName, userName, modId);
 	const newGame = new Game(gameCode);
-	games.set(modId, newGame);
+	games.set(mod, newGame);
 
 	// game has started. join through this code: fgsdkstfghret
 	return message.channel.send(
@@ -40,7 +43,7 @@ function join(message, args) {
 	}
 	const userName = message.author.username;
 	const userId = message.author.id;
-	const displayName = message.message.displayName;
+	const displayName = message.author.displayName;
 	const player = new Player(displayName, userName, userId);
 	const gameid = args[1];
 	const game = games.find((game) => game.gameCode == gameid);
@@ -58,6 +61,17 @@ function right(message, args, game) {
 		);
 	}
 	if (game) {
+		const lastPlayer = game.getLastPlayerBuzzed();
+
+		let playerObject;
+		for (let player of games.keys()) {
+			if (player.getUserName() == lastPlayer) {
+				playerObject = player;
+			}
+		}
+		console.log("Addding points to ");
+		console.log(playerObject.getDisplayName());
+		playerObject.addPoints(4);
 		return message.channel.send(game.right(message));
 	} else {
 		return message.channel.send("no game available");
@@ -67,10 +81,11 @@ function right(message, args, game) {
 function stats(message, args, game) {
 	if (game) {
 		players = games
-		.filter((g) => g.gameCode == game.gameCode)
-		.map((value, key) =>
-			message.channel.send(message.guild.members.cache.get(key).getStat())
-		);
+			.filter((g) => g.gameCode == game.gameCode)
+			.map((value, key) =>
+				// message.channel.send(message.guild.members.cache.get(key).getStat())
+				message.channel.send(key.getStat())
+			);
 	}
 }
 
@@ -217,8 +232,14 @@ module.exports = {
 	args: true,
 	execute(message, args) {
 		// something to retreive specific game object
-		const author = message.author.id;
+		let author;
+		author = message.author.id;
 		const game = games.find((_, player, __) => player.getUserId() == author);
+		for (let player of games.keys()) {
+			if (player.getUserId() == author) {
+				author = player;
+			}
+		}
 		switch (args[0]) {
 			case "start": // check
 				return start(message, args);
@@ -233,7 +254,7 @@ module.exports = {
 			case "tu": // check
 				return tossUp(message, args, game);
 			case "bz": // check
-				return buzz(message, args, game);
+				return buzz(message, args, game, author);
 			case "r": // check
 				return right(message, args, game);
 			case "w": // check
