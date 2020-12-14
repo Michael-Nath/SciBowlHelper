@@ -13,6 +13,17 @@ async function test(message) {
 function isModerator(message) {
 	return message.member.roles.cache.has("760208780485984306");
 }
+// getPlayer: given a player's id and a collection of games, this function returns the corresponding player object. If no player is found, it returns null.
+
+function getPlayer(author, games) {
+	let retreivedPlayer;
+	for (let player of games.keys()) {
+		if (player.getUserId() == author) {
+			retreivedPlayer = player;
+		}
+	}
+	return retreivedPlayer;
+}
 
 function start(message, args) {
 	// at the start of every round, reset all variables to defaults
@@ -62,16 +73,13 @@ function right(message, args, game) {
 	}
 	if (game) {
 		const lastPlayer = game.getLastPlayerBuzzed();
-
-		let playerObject;
-		for (let player of games.keys()) {
-			if (player.getUserName() == lastPlayer) {
-				playerObject = player;
-			}
+		const isTossUpRound = game.isTossUpRound();
+		const playerObject = getPlayer(lastPlayer, games)
+		if (isTossUpRound) {
+			console.log("Addding points to ");
+			console.log(playerObject);
+			playerObject.addPoints(4);
 		}
-		console.log("Addding points to ");
-		console.log(playerObject.getDisplayName());
-		playerObject.addPoints(4);
 		return message.channel.send(game.right(message));
 	} else {
 		return message.channel.send("no game available");
@@ -234,12 +242,8 @@ module.exports = {
 		// something to retreive specific game object
 		let author;
 		author = message.author.id;
+		// const player = getPlayer(author, games);
 		const game = games.find((_, player, __) => player.getUserId() == author);
-		for (let player of games.keys()) {
-			if (player.getUserId() == author) {
-				author = player;
-			}
-		}
 		switch (args[0]) {
 			case "start": // check
 				return start(message, args);
@@ -254,7 +258,7 @@ module.exports = {
 			case "tu": // check
 				return tossUp(message, args, game);
 			case "bz": // check
-				return buzz(message, args, game, author);
+				return buzz(message, args, game);
 			case "r": // check
 				return right(message, args, game);
 			case "w": // check

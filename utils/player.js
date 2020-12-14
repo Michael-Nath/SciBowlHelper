@@ -1,4 +1,3 @@
-const Discord = require("discord.js");
 class Player {
     constructor(displayName, userName, userId) {
         this.displayName = displayName;
