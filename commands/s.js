@@ -207,9 +207,9 @@ module.exports = {
 		const author = message.author.id;
 		const game = games.get(author);
 		switch (args[0]) {
-			case "start": // check
+			case "start": // double check
 				return start(message, args);
-			case "stop": // check
+			case "stop": // double check
 				return stop(message, args, game);
 			case "qend": //check
 				return roundEnd(message, args, game);
