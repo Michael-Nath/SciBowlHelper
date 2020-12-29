@@ -4,6 +4,8 @@ class Player {
         this.userName = userName;
         this.userId = userId;
         this.points = 0;
+        this.interruptCorrect = 0;
+        this.interruptTotal = 0;
     }
     addPoints(points) {
         this.points += points;

@@ -74,7 +74,7 @@ function right(message, args, game) {
 	if (game) {
 		const lastPlayer = game.getLastPlayerBuzzed();
 		const isTossUpRound = game.isTossUpRound();
-		const playerObject = getPlayer(lastPlayer, games)
+		const playerObject = getPlayer(lastPlayer, games);
 		if (isTossUpRound) {
 			console.log("Addding points to ");
 			console.log(playerObject);
@@ -90,13 +90,22 @@ function stats(message, args, game) {
 	if (game) {
 		players = games
 			.filter((g) => g.gameCode == game.gameCode)
-			.map((value, key) =>
+			.map((_, key) =>
 				// message.channel.send(message.guild.members.cache.get(key).getStat())
 				message.channel.send(key.getStat())
 			);
 	}
 }
 
+function players(message, args, game) {
+	if (game) {
+		players = games
+			.filter((g) => g.gameCode == game.gameCode)
+			.map((_, key) => {
+				message.channel.send(key.getUserName());
+			});
+	}
+}
 function leave(message, args, game) {
 	if (isModerator(message)) {
 		return message.channel.send(
@@ -177,24 +186,6 @@ function roundEnd(message, args, game) {
 	}
 }
 
-function players(message, args, game) {
-	if (!isModerator) {
-		return message.channel.send(
-			"You must be a **moderator** to use this command."
-		);
-	}
-	if (!game) {
-		return message.channel.send("You are not part of a game!");
-	}
-	message.channel.send(`Here are the players for game ${game.gameCode}:`);
-	players = games
-		.filter((g) => g.gameCode == game.gameCode)
-		.map((value, key) =>
-			message.channel.send(message.guild.members.cache.get(key).getUserName())
-		);
-
-	return message.channel.send("Done");
-}
 function add(message, args, game) {
 	if (!isModerator(message)) {
 		return message.channel.send(
