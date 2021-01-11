@@ -9,18 +9,18 @@ async function getQuestionPairs(pdfPath) {
 }
 
 async function mergePairs(formattedPairs) {
-    const size = formattedPairs.length;
-    // console.log(formattedPairs);
+	const size = formattedPairs.length;
+	// console.log(formattedPairs);
 	const mergedPairs = [];
 	for (i = 0; i < size - 1; i += 2) {
 		const mergedPair = {};
 		mergedPair["qNum"] = formattedPairs[i]["questionNum"];
-		mergedPair["qType"] = formattedPairs[i]["questionSubject"];
+		mergedPair["subject"] = formattedPairs[i]["questionSubject"];
 		mergedPair["tossUp"] = formattedPairs[i];
 		mergedPair["bonus"] = formattedPairs[i + 1];
 		mergedPairs.push(mergedPair);
 	}
-	console.log(mergedPairs);
+	// console.log(mergedPairs);
 }
 async function prettifyQuestionPairs(questionPairs) {
 	let numQuestions = 0;
@@ -28,22 +28,34 @@ async function prettifyQuestionPairs(questionPairs) {
 	var questionPair = {};
 	for (i = 0; i < questionPairs.length; i++) {
 		const page = questionPairs[i].split(" \n \n");
-		// console.log(page)
+		console.log(page)
 		for (j = 0; j < page.length; j++) {
 			if (!isNaN(page[j].trim()[0]) && page[j][0] != "") {
 				const qDetails = page[j].split("  ");
-
-				const qNum = parseInt(
-					qDetails[0].trim().substring(0, qDetails[0].trim().length)
-				);
+				qIntro = qDetails[0].trim().split(" "); // qIntro refers to the first two details of a question (question # and subject)
+				const qNum = parseInt(qIntro[0]);
+				// console.log(qDetails[0].trim().substring(0, qDetails[0].trim().length))
 				numQuestions += 1;
 				var question;
 				var choices;
 				var answer;
+
+				let subjectIndex;
+				let k;
+				for (k = 0; k < qDetails.length; k++) {
+					if (
+						["multiple choice", "short answer"].includes(
+							qDetails[k].trim().toLowerCase()
+						)
+					) {
+						subjectIndex = k;
+					}
+				}
+				// console.log(qDetails);
 				questionPair["questionNum"] = qNum;
-				questionPair["questionSubject"] = qDetails[1].toLowerCase();
-				questionPair["questionType"] = qDetails[2].toLowerCase();
-				question = qDetails.slice(3, qDetails.length).join(" ");
+				questionPair["questionSubject"] = qIntro[1].toLowerCase();
+				questionPair["questionType"] = qDetails[subjectIndex].toLowerCase();
+				question = qDetails.slice(subjectIndex + 1, qDetails.length).join(" ");
 
 				if (questionPair["questionType"] == "multiple choice") {
 					choices = page[j + 1];
@@ -67,6 +79,7 @@ async function prettifyQuestionPairs(questionPairs) {
 			}
 		}
 	}
+	// console.log(formattedQuestionPairs);
 	return formattedQuestionPairs;
 }
 
@@ -77,5 +90,8 @@ async function parsePacket(pdfPath) {
 		});
 	});
 }
-const pdfPath = "./packets/1_1.pdf";
+const pdfPath = "./packets/6_12.pdf";
 parsePacket(pdfPath);
+
+
+module.exports = parsePacket;
