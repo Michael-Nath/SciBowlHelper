@@ -20,6 +20,7 @@ async function mergePairs(formattedPairs) {
 		mergedPair["bonus"] = formattedPairs[i + 1];
 		mergedPairs.push(mergedPair);
 	}
+	return mergedPairs;
 	// console.log(mergedPairs);
 }
 async function prettifyQuestionPairs(questionPairs) {
@@ -28,7 +29,6 @@ async function prettifyQuestionPairs(questionPairs) {
 	var questionPair = {};
 	for (i = 0; i < questionPairs.length; i++) {
 		const page = questionPairs[i].split(" \n \n");
-		console.log(page)
 		for (j = 0; j < page.length; j++) {
 			if (!isNaN(page[j].trim()[0]) && page[j][0] != "") {
 				const qDetails = page[j].split("  ");
@@ -79,19 +79,25 @@ async function prettifyQuestionPairs(questionPairs) {
 			}
 		}
 	}
-	// console.log(formattedQuestionPairs);
 	return formattedQuestionPairs;
 }
 
 async function parsePacket(pdfPath) {
-	getQuestionPairs(pdfPath).then((pair) => {
-		prettifyQuestionPairs(pair).then((formattedPairs) => {
-			mergePairs(formattedPairs);
-		});
-	});
+	// let finalFormattedPacket;
+	const pair = await getQuestionPairs(pdfPath);
+	const formattedPairs = await prettifyQuestionPairs(pair)
+	const mergedPairs = await mergePairs(formattedPairs)
+	return mergedPairs;
+	// getQuestionPairs(pdfPath).then((pair) => {
+	// 	prettifyQuestionPairs(pair).then((formattedPairs) => {
+	// 		mergePairs(formattedPairs).then((mergedPairs) => {
+	// 			finalFormattedPacket = mergedPairs;
+	// 			return "JSIODJIO:ASJO:"
+	// 		});
+	// 	});
+	// });
+	// console.log(finalFormattedPacket)
+	// return finalFormattedPacket;
 }
-const pdfPath = "./packets/6_12.pdf";
-parsePacket(pdfPath);
-
 
 module.exports = parsePacket;
