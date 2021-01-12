@@ -10,7 +10,6 @@ async function getQuestionPairs(pdfPath) {
 
 async function mergePairs(formattedPairs) {
 	const size = formattedPairs.length;
-	// console.log(formattedPairs);
 	const mergedPairs = [];
 	for (i = 0; i < size - 1; i += 2) {
 		const mergedPair = {};
@@ -21,12 +20,11 @@ async function mergePairs(formattedPairs) {
 		mergedPairs.push(mergedPair);
 	}
 	return mergedPairs;
-	// console.log(mergedPairs);
 }
 async function prettifyQuestionPairs(questionPairs) {
-	let numQuestions = 0;
 	let formattedQuestionPairs = [];
 	var questionPair = {};
+	let numQuestions = 0;
 	for (i = 0; i < questionPairs.length; i++) {
 		const page = questionPairs[i].split(" \n \n");
 		for (j = 0; j < page.length; j++) {
@@ -34,7 +32,6 @@ async function prettifyQuestionPairs(questionPairs) {
 				const qDetails = page[j].split("  ");
 				qIntro = qDetails[0].trim().split(" "); // qIntro refers to the first two details of a question (question # and subject)
 				const qNum = parseInt(qIntro[0]);
-				// console.log(qDetails[0].trim().substring(0, qDetails[0].trim().length))
 				numQuestions += 1;
 				var question;
 				var choices;
@@ -51,7 +48,6 @@ async function prettifyQuestionPairs(questionPairs) {
 						subjectIndex = k;
 					}
 				}
-				// console.log(qDetails);
 				questionPair["questionNum"] = qNum;
 				questionPair["questionSubject"] = qIntro[1].toLowerCase();
 				questionPair["questionType"] = qDetails[subjectIndex].toLowerCase();
@@ -83,21 +79,10 @@ async function prettifyQuestionPairs(questionPairs) {
 }
 
 async function parsePacket(pdfPath) {
-	// let finalFormattedPacket;
 	const pair = await getQuestionPairs(pdfPath);
 	const formattedPairs = await prettifyQuestionPairs(pair)
 	const mergedPairs = await mergePairs(formattedPairs)
 	return mergedPairs;
-	// getQuestionPairs(pdfPath).then((pair) => {
-	// 	prettifyQuestionPairs(pair).then((formattedPairs) => {
-	// 		mergePairs(formattedPairs).then((mergedPairs) => {
-	// 			finalFormattedPacket = mergedPairs;
-	// 			return "JSIODJIO:ASJO:"
-	// 		});
-	// 	});
-	// });
-	// console.log(finalFormattedPacket)
-	// return finalFormattedPacket;
 }
 
 module.exports = parsePacket;

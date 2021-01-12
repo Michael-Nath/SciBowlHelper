@@ -15,9 +15,6 @@ for (const file of commandFiles) {
 	client.commands.set(command.name, command);
 }
 
-// client.setInterval(() => {
-// 	client.channels.cache.get("747915124718829679").send("Monkey Moo");
-// }, 2000);
 client.once("ready", () => {
 	console.log("Ready!");
 });
@@ -65,7 +62,6 @@ client.on("message", (message) => {
 		}
 	}
 	timestamps.set(message.author.id, now);
-	// setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
 
 	try {
 		setTimeout(() => command.execute(message, args), 1);
