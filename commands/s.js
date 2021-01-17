@@ -56,6 +56,7 @@ function join(message, args) {
 	const userId = message.author.id;
 	const displayName = message.author.displayName;
 	const player = new Player(displayName, userName, userId);
+	player.isModerator = true;
 	const gameid = args[1];
 	const game = games.find((game) => game.gameCode == gameid);
 	if (game) {
@@ -92,7 +93,9 @@ function stats(message, args, game) {
 			.filter((g) => g.gameCode == game.gameCode)
 			.map((_, key) =>
 				// message.channel.send(message.guild.members.cache.get(key).getStat())
-				message.channel.send(key.getStat())
+				{
+					message.channel.send(key.getStat());
+				}
 			);
 	}
 }

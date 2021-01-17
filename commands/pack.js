@@ -58,7 +58,7 @@ async function getPacketStats(message, pdfPath) {
 }
 
 module.exports = {
-	name: "pack",
+	name: "untouchable",
 	usage: "<packet_name>",
 	description: `\`pack\` command is an util used to retreive packets for review/competiton/etc.`,
 	arges: true,

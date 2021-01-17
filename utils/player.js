@@ -6,9 +6,13 @@ class Player {
         this.points = 0;
         this.interruptCorrect = 0;
         this.interruptTotal = 0;
+        this.isModerator = false;
     }
     addPoints(points) {
         this.points += points;
+    }
+    isModerator() {
+        return this.isModerator;
     }
     getDisplayName() {
         return this.displayName;

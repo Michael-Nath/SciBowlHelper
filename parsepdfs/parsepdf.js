@@ -19,6 +19,7 @@ async function mergePairs(formattedPairs) {
 		mergedPair["bonus"] = formattedPairs[i + 1];
 		mergedPairs.push(mergedPair);
 	}
+	console.log(mergedPairs);
 	return mergedPairs;
 }
 async function prettifyQuestionPairs(questionPairs) {
@@ -30,7 +31,9 @@ async function prettifyQuestionPairs(questionPairs) {
 		for (j = 0; j < page.length; j++) {
 			if (!isNaN(page[j].trim()[0]) && page[j][0] != "") {
 				const qDetails = page[j].split("  ");
+				console.log(qDetails);
 				qIntro = qDetails[0].trim().split(" "); // qIntro refers to the first two details of a question (question # and subject)
+				
 				const qNum = parseInt(qIntro[0]);
 				numQuestions += 1;
 				var question;
@@ -84,5 +87,7 @@ async function parsePacket(pdfPath) {
 	const mergedPairs = await mergePairs(formattedPairs)
 	return mergedPairs;
 }
+// const pdfPath = "./packets/mosfet_8.pdf";
+// parsePacket(pdfPath)
 
 module.exports = parsePacket;
