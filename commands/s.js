@@ -239,9 +239,9 @@ module.exports = {
 		// const player = getPlayer(author, games);
 		const game = games.find((_, player, __) => player.getUserId() == author);
 		switch (args[0]) {
-			case "start": // check
+			case "start": // double check
 				return start(message, args);
-			case "stop": // check
+			case "stop": // double check
 				return stop(message, args, game);
 			case "qend": //check
 				return roundEnd(message, args, game);
