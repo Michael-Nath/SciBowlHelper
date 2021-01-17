@@ -1,5 +1,7 @@
 const Discord = require("discord.js");
 const Game = require("../utils/game");
+const Player = require("../utils/player");
+const generateId = require("../utils/gameid");
 const games = new Discord.Collection();
 const db = require("../models");
 //commands will be of structure return message.channel.send(game.function)
@@ -11,6 +13,17 @@ async function test(message) {
 function isModerator(message) {
 	return message.member.roles.cache.has("760208780485984306");
 }
+// getPlayer: given a player's id and a collection of games, this function returns the corresponding player object. If no player is found, it returns null.
+
+function getPlayer(author, games) {
+	let retreivedPlayer;
+	for (let player of games.keys()) {
+		if (player.getUserId() == author) {
+			retreivedPlayer = player;
+		}
+	}
+	return retreivedPlayer;
+}
 
 function start(message, args) {
 	// at the start of every round, reset all variables to defaults
@@ -19,11 +32,13 @@ function start(message, args) {
 			"You must be a **moderator** to use this command."
 		);
 	}
-
-	const gameCode = Math.trunc(10000 * Math.random());
+	const gameCode = generateId();
 	const modId = message.author.id;
+	const userName = message.author.username;
+	const displayName = message.author.displayName;
+	const mod = new Player(displayName, userName, modId);
 	const newGame = new Game(gameCode);
-	games.set(modId, newGame);
+	games.set(mod, newGame);
 
 	// game has started. join through this code: fgsdkstfghret
 	return message.channel.send(
@@ -37,7 +52,11 @@ function join(message, args) {
 			"You must be a **player** to use this command."
 		);
 	}
-	const player = message.author.id;
+	const userName = message.author.username;
+	const userId = message.author.id;
+	const displayName = message.author.displayName;
+	const player = new Player(displayName, userName, userId);
+	player.isModerator = true;
 	const gameid = args[1];
 	const game = games.find((game) => game.gameCode == gameid);
 	if (game) {
@@ -54,12 +73,42 @@ function right(message, args, game) {
 		);
 	}
 	if (game) {
+		const lastPlayer = game.getLastPlayerBuzzed();
+		const isTossUpRound = game.isTossUpRound();
+		const playerObject = getPlayer(lastPlayer, games);
+		if (isTossUpRound) {
+			console.log("Addding points to ");
+			console.log(playerObject);
+			playerObject.addPoints(4);
+		}
 		return message.channel.send(game.right(message));
 	} else {
 		return message.channel.send("no game available");
 	}
 }
 
+function stats(message, args, game) {
+	if (game) {
+		players = games
+			.filter((g) => g.gameCode == game.gameCode)
+			.map((_, key) =>
+				// message.channel.send(message.guild.members.cache.get(key).getStat())
+				{
+					message.channel.send(key.getStat());
+				}
+			);
+	}
+}
+
+function players(message, args, game) {
+	if (game) {
+		players = games
+			.filter((g) => g.gameCode == game.gameCode)
+			.map((_, key) => {
+				message.channel.send(key.getUserName());
+			});
+	}
+}
 function leave(message, args, game) {
 	if (isModerator(message)) {
 		return message.channel.send(
@@ -73,7 +122,6 @@ function leave(message, args, game) {
 			"You must be a part of an existing game in order to leave one."
 		);
 	}
-
 	games.delete(id);
 	return message.channel.send("You have succesfully left the game.");
 }
@@ -141,24 +189,6 @@ function roundEnd(message, args, game) {
 	}
 }
 
-function players(message, args, game) {
-	if (!isModerator) {
-		return message.channel.send(
-			"You must be a **moderator** to use this command."
-		);
-	}
-	if (!game) {
-		return message.channel.send("You are not part of a game!");
-	}
-	message.channel.send(`Here are the players for game ${game.gameCode}:`);
-	players = games
-		.filter((g) => g.gameCode == game.gameCode)
-		.map((value, key) =>
-			message.channel.send(message.guild.members.cache.get(key).user.username)
-		);
-
-	return message.channel.send("Done");
-}
 function add(message, args, game) {
 	if (!isModerator(message)) {
 		return message.channel.send(
@@ -204,8 +234,10 @@ module.exports = {
 	args: true,
 	execute(message, args) {
 		// something to retreive specific game object
-		const author = message.author.id;
-		const game = games.get(author);
+		let author;
+		author = message.author.id;
+		// const player = getPlayer(author, games);
+		const game = games.find((_, player, __) => player.getUserId() == author);
 		switch (args[0]) {
 			case "start": // double check
 				return start(message, args);
@@ -237,6 +269,8 @@ module.exports = {
 				return players(message, args, game);
 			case "test":
 				return test(message);
+			case "stats":
+				return stats(message, args, game);
 		}
 	},
 };

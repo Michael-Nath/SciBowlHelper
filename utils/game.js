@@ -14,6 +14,7 @@ class Game {
 		this.answerWrong = false;
 
 		this.question = false;
+		this.lastPersonBuzzed = "";
 		this.buzzedAlready = false;
 	}
 	constructor(gameCode) {
@@ -22,6 +23,7 @@ class Game {
 		this.gameCode = gameCode;
 		this.greenPoints = 0;
 		this.redPoints = 0;
+		this.lastPersonBuzzed = "";
 		this.resetVariables();
 	}
 
@@ -80,6 +82,7 @@ class Game {
 		}
 		// if someone buzzes, then the 5 second timer is stopped.
 		const userName = member.user.username;
+		const userId = member.id
 		if (member.roles.cache.find((r) => r.name === "Green")) {
 			this.currentBuzzing = "green";
 			buzzerEmbed.setColor("#50c878");
@@ -93,8 +96,21 @@ class Game {
 			buzzerEmbed.addField("Interrupt From:", `**${member.displayName}**`);
 		}
 		buzzerEmbed.addField("Team:", `${this.currentBuzzing.toUpperCase()}`);
+		this.lastPersonBuzzed = userId;
 		buzzerEmbed.addField("Message", `**${userName}, STATE YOUR ANSWER**`);
 		return buzzerEmbed;
+	}
+
+	getLastPlayerBuzzed() {
+		return this.lastPersonBuzzed;
+	}
+
+	isBonusRound() {
+		return this.bonusRound;
+	}
+
+	isTossUpRound() {
+		return this.tossRound;
 	}
 
 	bonus(message) {
